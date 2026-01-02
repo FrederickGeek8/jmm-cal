@@ -12,11 +12,6 @@
         crossorigin="anonymous"></script>
 
     <style type="text/css" media="screen">
-        label {
-            display: block;
-            margin-bottom: 10px;
-        }
-
         textarea {
             -webkit-box-sizing: border-box;
             -moz-box-sizing: border-box;
@@ -64,11 +59,16 @@
         The code is
         also available on <a href="https://github.com/FrederickGeek8/jmm-cal">Github</a>.</p>
     <p id="error" style="display: none; color: red;"></p>
-    <label for="jmm-cal"><strong>Copy/paste <em>all</em> of the text from your emailed JMM schedule below. It should
+    <label for="jmm-cal" style="display: block; margin-bottom: 10px;"><strong>Copy/paste <em>all</em> of the text from
+            your emailed JMM schedule below. It should
             start with
             "JMM 2026".</strong></label>
     <textarea id="jmm-cal" name="jmm-cal" rows="20" cols="100" placeholder="Copy-paste the JMM PDF Here"
         style="max-width:100%;"></textarea>
+    <br />
+    <input type="checkbox" name="guess" id="guess" checked disabled />
+    <label for="guess">Attempt to fetch end-times for events <span id="loading" style="text-transform: italics;">
+            (Loading...)</span></label>
     <br />
     <button id="generate">Generate iCal File</button>
     <h3><a id="download" style="display: none"><strong>Click here to download your <code>ical</code> file.</strong></a>
@@ -76,8 +76,8 @@
 
     <h2>Limitations</h2>
     <ul>
-        <li>The PDF doesn't list the duration of these events, so that is not accounted for in the exported calendar.
-            You may edit the events in your calendar app afterwards, and this can just serve as a starting point.</li>
+        The PDF generation (and parsing) is not fool proof. There could be errors in my code, or edge-cases I missed in
+        the PDF generation.
     </ul>
 
     <div id="events">
@@ -87,6 +87,32 @@
 
     <script type="text/javascript">
         const error_elem = document.getElementById("error");
+        let resource_ready = false;
+        let data_json = null;
+
+
+        async function getData() {
+            const url = "/resources/jmm2026-parsed-agenda.min.json"
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Response status: ${response.status}`);
+                }
+
+                data_json = await response.json();
+                resource_ready = true;
+
+                document.getElementById("loading").remove();
+                document.getElementById("guess").disabled = false;
+
+                console.debug("Fetched JMM agenda");
+            } catch (error) {
+                console.error(error.message);
+                document.getElementById("guess").checked = false;
+            }
+        }
+
+        getData();
 
         // Thanks https://stackoverflow.com/a/6248722
         function generateUID() {
@@ -119,7 +145,10 @@
                 cal_event.description = event["presentedBy"];
                 cal_event.location = event["location"];
                 cal_event.uid = generateUID();
-                cal_event.startDate = ICAL.Time.fromJSDate(new Date(Date.parse(`${event["date"]} ${event["time"]} EST`)));
+                cal_event.startDate = ICAL.Time.fromJSDate(new Date(Date.parse(`${event["date"]} ${event["start_time"]} EST`)));
+                if (event["end_time"] != null) {
+                    cal_event.endDate = ICAL.Time.fromJSDate(new Date(Date.parse(`${event["date"]} ${event["end_time"]} EST`)));
+                }
 
                 comp.addSubcomponent(vevent);
             });
@@ -144,8 +173,8 @@
 
                 const time = document.createElement('time');
                 time.className = 'dt-start';
-                time.setAttribute('datetime', (new Date(`${event["date"]} ${event["time"]} EST`)).toISOString());
-                time.textContent = `${event.date} at ${event.time}`;
+                time.setAttribute('datetime', (new Date(`${event["date"]} ${event["start_time"]} EST`)).toISOString());
+                time.textContent = `${event.date} at ${event.start_time}`;
 
                 const presenters = document.createElement('p');
                 presenters.className = 'p-organizer';
@@ -157,6 +186,14 @@
 
                 eventDiv.appendChild(title);
                 eventDiv.appendChild(time);
+                if (event.end_time != null) {
+                    const end_time = document.createElement('end_time');
+                    end_time.className = 'dt-start';
+                    end_time.setAttribute('datetime', (new Date(`${event["date"]} ${event["end_time"]} EST`)).toISOString());
+                    end_time.textContent = ` to ${event.end_time}`;
+                    eventDiv.appendChild(end_time);
+                }
+
                 eventDiv.appendChild(presenters);
                 eventDiv.appendChild(location);
 
@@ -195,7 +232,7 @@
             const misplaced_titles = [];
             for (let i = 1; i < contents_lines.length; i++) {
                 if (contents_lines[i - 1].startsWith("Location:") && !contents_lines[i].startsWith("0")) {
-                    console.error(`Misplaced title: ${contents_lines[i]}`);
+                    console.warn(`Misplaced title: ${contents_lines[i]}`);
                     // subtract duplicate titles length since they will be removed
                     misplaced_titles.push(i);
                 }
@@ -211,26 +248,51 @@
                 contents_lines.splice(index + 2, 0, title);
             }
 
-            const full_text = contents_lines.join("\n");
+            const full_text = contents_lines.join("\n")
+                .replace('–', '--'); // Mathopoly!
             // console.debug(full_text);
             const mega_regex = /(\d{2} \w+ \d{4})\n(\d{2}:\d{2} \w{2})\n((?:.*\n)+?)(?=Presented by)(Presented by:(?:.*\n)+?)(?=Location)(Location: .+)/g;
             const events = [];
             let match;
+            const guess = document.getElementById("guess").checked;
 
+            let matched_times = 0;
             while ((match = mega_regex.exec(full_text)) !== null) {
+                const title = match[3].trim().replace(/\n/g, ' ');
+
+                let end_time = null;
+                if (resource_ready && guess) {
+                    // match endtime -- very inefficiently
+                    let day = parseInt(match[1].substring(0, 2));
+                    for (let i = 0; i < data_json.length; i++) {
+                        const event = data_json[i];
+
+                        if (event["day"] == day && event["starttime"] == match[2].toLowerCase() && event["title"] == title) {
+                            end_time = event["endtime"];
+                            matched_times++;
+                            break;
+                        }
+                    }
+                }
+
                 events.push({
                     date: match[1],
-                    time: match[2],
-                    title: match[3].trim().replace(/\n/g, ' '),
+                    start_time: match[2],
+                    end_time: end_time,
+                    title: title,
                     presentedBy: match[4].replace('Presented by: ', '').trim().replace(/\n/g, ' '),
                     location: match[5].replace('Location: ', '').trim()
                 });
             }
 
+            console.debug(`Matched ${matched_times} out of ${events.length} event end times.`);
+
 
             generateLink(events);
             displayEvents(events);
         }
+
+
 
         document.getElementById("generate").onclick = parse_contents;
     </script>
