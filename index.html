@@ -68,6 +68,8 @@
 
     <script type="text/javascript">
         const error_elem = document.getElementById("error");
+
+        // Thanks https://stackoverflow.com/a/6248722
         function generateUID() {
             // I generate the UID from two parts here
             // to ensure the random number provide enough bits.
@@ -97,7 +99,6 @@
 
             // normalize dates. Sometimes 04 Jan 2026 => 04 Jan\n2026
             contents = contents.replace(/Jan\n2026/g, "Jan 2026");
-            // console.log(contents);
 
             // general format is date\ntime\ntitle\ndescription\nlocation
             // except for cut page with a duplicate title, which appears before
@@ -107,11 +108,11 @@
             var to_normalize = [];
             for (let i = 1; i < contents_lines.length; i++) {
                 if (contents_lines[i - 1] == contents_lines[i]) {
-                    console.log(`${contents_lines[i]} ; i = ${i}`);
+                    console.debug(`${contents_lines[i]} ; i = ${i}`);
                     // should be date
-                    console.log(`${contents_lines[i + 1]}`);
+                    console.debug(`${contents_lines[i + 1]}`);
                     // should be time
-                    console.log(`${contents_lines[i + 2]}`);
+                    console.debug(`${contents_lines[i + 2]}`);
                     to_normalize.push(i);
                 }
             }
@@ -124,16 +125,11 @@
                 // remove both duplicates
                 contents_lines.splice(new_index - 1, 2);
                 // to_normalize[i] now points to time
-                console.log(contents_lines[new_index]);
                 contents_lines.splice(new_index + 1, 0, title);
-                console.log(contents_lines);
             }
 
-            console.log(contents_lines.join("\n"));
             const full_text = contents_lines.join("\n");
-
             const mega_regex = /(\d{2} \w+ \d{4})\n(\d{2}:\d{2} \w{2})\n((?:.*\n)+?)(?=Presented by)(Presented by: .+)\n(Location: .+)/g;
-
             const events = [];
             let match;
 
