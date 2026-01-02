@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>JMM Cal Converter</title>
+    <title>Joint Mathematics Meetup Cal Converter</title>
     <meta name="description" content="A tool for converting JMM/vFAIRS app generated scheduled to ical files">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -26,7 +26,7 @@
         }
 
         @media (prefers-color-scheme: dark) {
-            * {
+            html {
                 filter: invert(1);
             }
         }
@@ -42,9 +42,17 @@
             All computations are done client-side and no data is sent to any servers.
         </p>
     </noscript>
+    <h1>A Tool For Converting Joint Mathematics Meetup Schedules</h1>
+    <p>Use this tool to convert the PDF agenda you emailed yourself from the JMM app to a iCal format, so it can be
+        imported into Google Calendar, Apple Calendar, and more.</p>
+    <p>All data is converted in the safety of your own browser, and no data is sent to any server.</p>
+    <p>Contact me, <a href="https://freddy.us/contact/" rel="me">Frederick Morlock</a>, if you run into any problems.
+        The code is
+        also available on <a href="https://github.com/FrederickGeek8/jmm-cal">Github</a>.</p>
     <p id="error" style="display: none; color: red;"></p>
-    <label for="jmm-cal">Copy/paste <em>all</em> of the text from your emailed JMM schedule below. It should start with
-        "JMM 2026".</label>
+    <label for="jmm-cal"><strong>Copy/paste <em>all</em> of the text from your emailed JMM schedule below. It should
+            start with
+            "JMM 2026".</strong></label>
     <textarea id="jmm-cal" name="jmm-cal" rows="20" cols="100" placeholder="Copy-paste the JMM PDF Here"
         style="max-width:100%;"></textarea>
     <br />
