@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Joint Mathematics Meetup Cal Converter</title>
+    <title>Joint Mathematics Meeting Cal Converter</title>
     <meta name="description" content="A tool for converting JMM/vFAIRS app generated scheduled to ical files">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -48,10 +48,12 @@
             All computations are done client-side and no data is sent to any servers.
         </p>
     </noscript>
-    <h1>A Tool For Converting Joint Mathematics Meetup Schedules</h1>
+    <h1>A Tool For Converting Joint Mathematics Meeting Schedules</h1>
     <p>Use this tool to convert the PDF agenda you emailed yourself from the JMM app to a iCal format, so it can be
         imported into Google Calendar, Apple Calendar, and more.</p>
-    <p>All data is converted in the safety of your own browser, and no data is sent to any server.</p>
+    <p>Open your PDF and "Select All" text and paste it below. Click "Generate iCal File" and a iCal file will be
+        generated. All data is converted in the safety of your own browser,
+        and no data is sent to any server.</p>
     <p>Contact me, <a href="https://freddy.us/contact/" rel="me">Frederick Morlock</a>, if you run into any problems.
         The code is
         also available on <a href="https://github.com/FrederickGeek8/jmm-cal">Github</a>.</p>
@@ -62,9 +64,9 @@
     <textarea id="jmm-cal" name="jmm-cal" rows="20" cols="100" placeholder="Copy-paste the JMM PDF Here"
         style="max-width:100%;"></textarea>
     <br />
-    <button id="generate">Generate iCAL File</button>
+    <button id="generate">Generate iCal File</button>
     <br />
-    <a id="download" style="display: none">Download your <code>ical</code> file.</a>
+    <a id="download" style="display: none"><strong>Click here to download your <code>ical</code> file.</strong></a>
 
     <h2>Limitations</h2>
     <ul>
