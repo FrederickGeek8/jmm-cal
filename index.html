@@ -71,7 +71,8 @@
         style="max-width:100%;"></textarea>
     <br />
     <button id="generate">Generate iCal File</button>
-    <h3><a id="download" style="display: none"><strong>Click here to download your <code>ical</code> file.</strong></a></h3>
+    <h3><a id="download" style="display: none"><strong>Click here to download your <code>ical</code> file.</strong></a>
+    </h3>
 
     <h2>Limitations</h2>
     <ul>
@@ -183,31 +184,36 @@
             // the time
 
             var contents_lines = contents.split("\n");
-            var to_normalize = [];
-            for (let i = 1; i < contents_lines.length; i++) {
+            for (let i = contents_lines.length; i > 0; i--) {
                 if (contents_lines[i - 1] == contents_lines[i]) {
-                    console.debug(`${contents_lines[i]} ; i = ${i}`);
-                    // should be date
-                    console.debug(`${contents_lines[i + 1]}`);
-                    // should be time
-                    console.debug(`${contents_lines[i + 2]}`);
-                    to_normalize.push(i);
+                    console.debug(`Duplicate line: ${contents_lines[i]}`);
+                    // remove the duplicate, shift index back
+                    contents_lines.splice(i, 1);
                 }
             }
 
-            for (let i = 0; i < to_normalize.length; i++) {
-                // pop array, subtracting index by number of removed items
-                let new_index = to_normalize[i] - i;
-                let title = contents_lines[new_index];
+            const misplaced_titles = [];
+            for (let i = 1; i < contents_lines.length; i++) {
+                if (contents_lines[i - 1].startsWith("Location:") && !contents_lines[i].startsWith("0")) {
+                    console.error(`Misplaced title: ${contents_lines[i]}`);
+                    // subtract duplicate titles length since they will be removed
+                    misplaced_titles.push(i);
+                }
+            }
 
-                // remove both duplicates
-                contents_lines.splice(new_index - 1, 2);
-                // to_normalize[i] now points to time
-                contents_lines.splice(new_index + 1, 0, title);
+            for (let i = 0; i < misplaced_titles.length; i++) {
+                // pop array, subtracting index by number of removed items
+                let index = misplaced_titles[i];
+                let title = contents_lines[index];
+
+                contents_lines.splice(index, 1);
+                // now points to time
+                contents_lines.splice(index + 2, 0, title);
             }
 
             const full_text = contents_lines.join("\n");
-            const mega_regex = /(\d{2} \w+ \d{4})\n(\d{2}:\d{2} \w{2})\n((?:.*\n)+?)(?=Presented by)(Presented by: .+)\n(Location: .+)/g;
+            // console.debug(full_text);
+            const mega_regex = /(\d{2} \w+ \d{4})\n(\d{2}:\d{2} \w{2})\n((?:.*\n)+?)(?=Presented by)(Presented by:(?:.*\n)+?)(?=Location)(Location: .+)/g;
             const events = [];
             let match;
 
@@ -216,7 +222,7 @@
                     date: match[1],
                     time: match[2],
                     title: match[3].trim().replace(/\n/g, ' '),
-                    presentedBy: match[4].replace('Presented by: ', '').trim(),
+                    presentedBy: match[4].replace('Presented by: ', '').trim().replace(/\n/g, ' '),
                     location: match[5].replace('Location: ', '').trim()
                 });
             }
