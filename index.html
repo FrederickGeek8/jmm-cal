@@ -1,0 +1,165 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>JMM Cal Converter</title>
+    <meta name="description" content="A tool for converting JMM/vFAIRS app generated scheduled to ical files">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <script src="https://unpkg.com/ical.js@2.2.1/dist/ical.es5.min.cjs"
+        integrity="sha384-ju8ozm4ZyuCTzjb4fvLmPUASX0zfc5jLOvyN9wadLx23y965jxfdbKTPMIeLrliP"
+        crossorigin="anonymous"></script>
+
+    <style type="text/css" media="screen">
+        label {
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        textarea {
+            -webkit-box-sizing: border-box;
+            -moz-box-sizing: border-box;
+            box-sizing: border-box;
+
+            max-width: 100%;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            * {
+                filter: invert(1);
+            }
+        }
+    </style>
+
+</head>
+
+<body>
+    <noscript>
+        <p style="color: red;">
+            Javascript is required for this website to function.
+
+            All computations are done client-side and no data is sent to any servers.
+        </p>
+    </noscript>
+    <p id="error" style="display: none; color: red;"></p>
+    <label for="jmm-cal">Copy/paste <em>all</em> of the text from your emailed JMM schedule below. It should start with
+        "JMM 2026".</label>
+    <textarea id="jmm-cal" name="jmm-cal" rows="20" cols="100" placeholder="Copy-paste the JMM PDF Here"
+        style="max-width:100%;"></textarea>
+    <br />
+    <button id="generate">Generate iCAL File</button>
+    <br />
+    <a id="download" style="display: none">Download your <code>ical</code> file.</a>
+
+
+    <script type="text/javascript">
+        const error_elem = document.getElementById("error");
+        function generateUID() {
+            // I generate the UID from two parts here
+            // to ensure the random number provide enough bits.
+            var firstPart = (Math.random() * 46656) | 0;
+            var secondPart = (Math.random() * 46656) | 0;
+            firstPart = ("000" + firstPart.toString(36)).slice(-3);
+            secondPart = ("000" + secondPart.toString(36)).slice(-3);
+            return firstPart + secondPart;
+        }
+
+        function writeError(msg) {
+            console.error(msg);
+
+            error_elem.innerText = `Error: ${msg}`;
+            error_elem.style.display = "block";
+        }
+
+        function parse_contents(e) {
+            error_elem.text = "";
+            error_elem.style.display = "none";
+            var contents = document.getElementById("jmm-cal").value;
+            // validate first line is JMM 2026
+            if (contents.slice(0, contents.indexOf("\n")) != "JMM 2026") {
+                writeError("The first line should read JMM 2026");
+                return;
+            }
+
+            // normalize dates. Sometimes 04 Jan 2026 => 04 Jan\n2026
+            contents = contents.replace(/Jan\n2026/g, "Jan 2026");
+            // console.log(contents);
+
+            // general format is date\ntime\ntitle\ndescription\nlocation
+            // except for cut page with a duplicate title, which appears before
+            // the time
+
+            var contents_lines = contents.split("\n");
+            var to_normalize = [];
+            for (let i = 1; i < contents_lines.length; i++) {
+                if (contents_lines[i - 1] == contents_lines[i]) {
+                    console.log(`${contents_lines[i]} ; i = ${i}`);
+                    // should be date
+                    console.log(`${contents_lines[i + 1]}`);
+                    // should be time
+                    console.log(`${contents_lines[i + 2]}`);
+                    to_normalize.push(i);
+                }
+            }
+
+            for (let i = 0; i < to_normalize.length; i++) {
+                // pop array, subtracting index by number of removed items
+                let new_index = to_normalize[i] - i;
+                let title = contents_lines[new_index];
+
+                // remove both duplicates
+                contents_lines.splice(new_index - 1, 2);
+                // to_normalize[i] now points to time
+                console.log(contents_lines[new_index]);
+                contents_lines.splice(new_index + 1, 0, title);
+                console.log(contents_lines);
+            }
+
+            console.log(contents_lines.join("\n"));
+            const full_text = contents_lines.join("\n");
+
+            const mega_regex = /(\d{2} \w+ \d{4})\n(\d{2}:\d{2} \w{2})\n((?:.*\n)+?)(?=Presented by)(Presented by: .+)\n(Location: .+)/g;
+
+            const events = [];
+            let match;
+
+            while ((match = mega_regex.exec(full_text)) !== null) {
+                events.push({
+                    date: match[1],
+                    time: match[2],
+                    title: match[3].trim().replace(/\n/g, ' '),
+                    presentedBy: match[4].replace('Presented by: ', '').trim(),
+                    location: match[5].replace('Location: ', '').trim()
+                });
+            }
+
+
+            var comp = new ICAL.Component(['vcalendar', [], []]);
+            comp.updatePropertyWithValue('prodid', '-//JMM Calendar');
+            comp.toString();
+
+            events.forEach((event) => {
+                var vevent = new ICAL.Component('vevent');
+                var cal_event = new ICAL.Event(vevent);
+
+                cal_event.summary = event["title"];
+                cal_event.description = event["presentedBy"];
+                cal_event.location = event["location"];
+                cal_event.uid = generateUID();
+                cal_event.startDate = ICAL.Time.fromJSDate(new Date(Date.parse(`${event["date"]} ${event["time"]} EST`)));
+
+                comp.addSubcomponent(vevent);
+            });
+
+            var dl_element = document.getElementById("download");
+            dl_element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(comp.toString()));
+            dl_element.setAttribute('download', "test.ics");
+            dl_element.style.display = 'initial';
+        }
+
+        document.getElementById("generate").onclick = parse_contents;
+    </script>
+</body>
+
+</html>
