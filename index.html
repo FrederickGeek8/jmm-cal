@@ -31,6 +31,12 @@
             max-width: 850px;
         }
 
+        .h-event {
+            border: 1px solid black;
+            padding: 5px;
+            margin: 10px;
+        }
+
         @media (prefers-color-scheme: dark) {
             html {
                 filter: invert(1);
@@ -65,14 +71,18 @@
         style="max-width:100%;"></textarea>
     <br />
     <button id="generate">Generate iCal File</button>
-    <br />
-    <a id="download" style="display: none"><strong>Click here to download your <code>ical</code> file.</strong></a>
+    <h3><a id="download" style="display: none"><strong>Click here to download your <code>ical</code> file.</strong></a></h3>
 
     <h2>Limitations</h2>
     <ul>
         <li>The PDF doesn't list the duration of these events, so that is not accounted for in the exported calendar.
             You may edit the events in your calendar app afterwards, and this can just serve as a starting point.</li>
     </ul>
+
+    <div id="events">
+        <h2>Parsed Events</h2>
+        <div id="parsed-events"><em>Input your PDF contents above to show the parsed events.</em></div>
+    </div>
 
     <script type="text/javascript">
         const error_elem = document.getElementById("error");
@@ -93,6 +103,66 @@
 
             error_elem.innerText = `Error: ${msg}`;
             error_elem.style.display = "block";
+        }
+
+        function generateLink(events) {
+            var comp = new ICAL.Component(['vcalendar', [], []]);
+            comp.updatePropertyWithValue('prodid', '-//JMM Calendar');
+            comp.toString();
+
+            events.forEach((event) => {
+                var vevent = new ICAL.Component('vevent');
+                var cal_event = new ICAL.Event(vevent);
+
+                cal_event.summary = event["title"];
+                cal_event.description = event["presentedBy"];
+                cal_event.location = event["location"];
+                cal_event.uid = generateUID();
+                cal_event.startDate = ICAL.Time.fromJSDate(new Date(Date.parse(`${event["date"]} ${event["time"]} EST`)));
+
+                comp.addSubcomponent(vevent);
+            });
+
+            var dl_element = document.getElementById("download");
+            dl_element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(comp.toString()));
+            dl_element.setAttribute('download', "JMM 2026 Agenda.ics");
+            dl_element.style.display = 'initial';
+        }
+
+        function displayEvents(events) {
+            // https://microformats.org/wiki/h-event#Example
+            const container = document.createElement('div');
+
+            events.forEach(event => {
+                const eventDiv = document.createElement('div');
+                eventDiv.className = 'h-event';
+
+                const title = document.createElement('h3');
+                title.className = 'p-name';
+                title.textContent = event["title"];
+
+                const time = document.createElement('time');
+                time.className = 'dt-start';
+                time.setAttribute('datetime', (new Date(`${event["date"]} ${event["time"]} EST`)).toISOString());
+                time.textContent = `${event.date} at ${event.time}`;
+
+                const presenters = document.createElement('p');
+                presenters.className = 'p-organizer';
+                presenters.textContent = `Presented by: ${event.presentedBy}`;
+
+                const location = document.createElement('p');
+                location.className = 'p-location';
+                location.textContent = event.location;
+
+                eventDiv.appendChild(title);
+                eventDiv.appendChild(time);
+                eventDiv.appendChild(presenters);
+                eventDiv.appendChild(location);
+
+                container.appendChild(eventDiv);
+            });
+
+            document.getElementById("parsed-events").replaceWith(container);
         }
 
         function parse_contents(e) {
@@ -152,27 +222,8 @@
             }
 
 
-            var comp = new ICAL.Component(['vcalendar', [], []]);
-            comp.updatePropertyWithValue('prodid', '-//JMM Calendar');
-            comp.toString();
-
-            events.forEach((event) => {
-                var vevent = new ICAL.Component('vevent');
-                var cal_event = new ICAL.Event(vevent);
-
-                cal_event.summary = event["title"];
-                cal_event.description = event["presentedBy"];
-                cal_event.location = event["location"];
-                cal_event.uid = generateUID();
-                cal_event.startDate = ICAL.Time.fromJSDate(new Date(Date.parse(`${event["date"]} ${event["time"]} EST`)));
-
-                comp.addSubcomponent(vevent);
-            });
-
-            var dl_element = document.getElementById("download");
-            dl_element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(comp.toString()));
-            dl_element.setAttribute('download', "JMM 2026 Agenda.ics");
-            dl_element.style.display = 'initial';
+            generateLink(events);
+            displayEvents(events);
         }
 
         document.getElementById("generate").onclick = parse_contents;
