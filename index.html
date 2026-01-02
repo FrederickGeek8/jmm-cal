@@ -28,6 +28,7 @@
         body {
             background: white;
             color: black;
+            max-width: 850px;
         }
 
         @media (prefers-color-scheme: dark) {
@@ -65,6 +66,11 @@
     <br />
     <a id="download" style="display: none">Download your <code>ical</code> file.</a>
 
+    <h2>Limitations</h2>
+    <ul>
+        <li>The PDF doesn't list the duration of these events, so that is not accounted for in the exported calendar.
+            You may edit the events in your calendar app afterwards, and this can just serve as a starting point.</li>
+    </ul>
 
     <script type="text/javascript">
         const error_elem = document.getElementById("error");
