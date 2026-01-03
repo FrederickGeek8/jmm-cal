@@ -1,11 +1,12 @@
 <!doctype html>
-<html>
+<html lang="en">
 
 <head>
-    <meta charset="utf-8">
-    <title>Joint Mathematics Meeting Cal Converter</title>
-    <meta name="description" content="A tool for converting JMM/vFAIRS app generated scheduled to ical files">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8" />
+    <title>JMM 2026 Calendar Converter</title>
+    <meta name="description"
+        content="A tool for converting your Joint Mathematics Meeting personal agenda to a normal calendar file." />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <script src="https://unpkg.com/ical.js@2.2.1/dist/ical.es5.min.cjs"
         integrity="sha384-ju8ozm4ZyuCTzjb4fvLmPUASX0zfc5jLOvyN9wadLx23y965jxfdbKTPMIeLrliP"
@@ -50,10 +51,12 @@
         </p>
     </noscript>
     <h1>A Tool For Converting Joint Mathematics Meeting Schedules</h1>
-    <p>Use this tool to convert the PDF agenda you emailed yourself from the JMM app to a iCal format, so it can be
-        imported into Google Calendar, Apple Calendar, and more.</p>
-    <p>Open your PDF and "Select All" text and paste it below. Click "Generate iCal File" and a iCal file will be
-        generated. All data is converted in the safety of your own browser,
+    <p>Use this tool to convert your personal agenda for the Joint Mathematics Meeting to a iCal format, so it can be
+        imported into Google Calendar, Apple Calendar, and more. The JMM 2026 mobile app only supports emailing the
+        agenda you designed as a PDF, so this tool is meant to bridge the gap between the app and your calendar.</p>
+    <p><strong>Instructions:</strong> Open your PDF and "Select All" text and paste it below. Click "Generate iCal File"
+        and a download link for your iCal file will be generated. All data is converted in the safety of your own
+        browser,
         and no data is sent to any server.</p>
     <p>Contact me, <a href="https://freddy.us/contact/" rel="me">Frederick Morlock</a>, if you run into any problems.
         The code is
@@ -63,7 +66,8 @@
             your emailed JMM schedule below. It should
             start with
             "JMM 2026".</strong></label>
-    <textarea id="jmm-cal" name="jmm-cal" rows="20" cols="100" placeholder="Copy-paste the JMM PDF Here"
+    <textarea id="jmm-cal" name="jmm-cal" rows="20" cols="100"
+        placeholder="Copy-paste the JMM PDF contents here. It should begin with 'JMM 2026' since you copied the headline of the PDF too."
         style="max-width:100%;"></textarea>
     <br />
     <input type="checkbox" name="guess" id="guess" checked disabled />
@@ -76,8 +80,8 @@
 
     <h2>Limitations</h2>
     <ul>
-        The PDF generation (and parsing) is not fool proof. There could be errors in my code, or edge-cases I missed in
-        the PDF generation.
+        The PDF generation (and parsing) is not bullet-proof. There could be errors in my code and edge-cases I have not
+        accounted for. Let me know if you run into any issues.
     </ul>
 
     <div id="events">
