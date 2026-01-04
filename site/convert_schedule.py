@@ -13,7 +13,7 @@ def collect_day(mtg_day):
         "title": e["mtgevt-confextitle"],
         "starttime": e["mtgevt-starttime"].replace('.', '').lower().zfill(8),
         "endtime": e["mtgevt-endtime"].replace('.', '').lower().zfill(8),
-        "day": int(e["mtgevt-day"]["mtgevt-dayno"])
+        "day": int(e["mtgevt-day"]["mtgevt-dayno"]),
     }, mtg_day["mtg-events"]["mtg-event"])
 
 def collect_day_sub(mtg_day):
@@ -28,6 +28,7 @@ def collect_day_sub(mtg_day):
             "title": se["mtgsub-title"],
             "starttime": se["mtgsub-starttime"].replace('.', '').lower().zfill(8),
             "endtime": se["mtgsub-endtime"].replace('.', '').lower().zfill(8),
+            "presno": se["mtgsub-presno"],
             "day": int(event["mtgevt-day"]["mtgevt-dayno"])
         }, l))
 
