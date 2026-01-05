@@ -148,7 +148,7 @@
                 cal_event.summary = event["title"];
                 cal_event.description = event["presentedBy"];
                 cal_event.location = event["location"];
-                cal_event.uid = generateUID();
+                cal_event.uid = event["uid"];
                 cal_event.startDate = ICAL.Time.fromJSDate(new Date(Date.parse(`${event["date"]} ${event["start_time"]} EST`)));
                 if (event["end_time"] != null) {
                     cal_event.endDate = ICAL.Time.fromJSDate(new Date(Date.parse(`${event["date"]} ${event["end_time"]} EST`)));
@@ -265,6 +265,7 @@
                 const title = match[3].trim().replace(/\n/g, ' ');
 
                 let end_time = null;
+                let uid = null;
                 if (resource_ready && guess) {
                     // match endtime -- very inefficiently
                     let day = parseInt(match[1].substring(0, 2));
@@ -273,6 +274,7 @@
 
                         if (event["day"] == day && event["starttime"] == match[2].toLowerCase() && event["title"] == title) {
                             end_time = event["endtime"];
+                            uid = event["uid"];
                             matched_times++;
                             break;
                         }
@@ -284,6 +286,7 @@
                     start_time: match[2],
                     end_time: end_time,
                     title: title,
+                    uid: uid ?? generateUID(),
                     presentedBy: match[4].replace('Presented by: ', '').trim().replace(/\n/g, ' '),
                     location: match[5].replace('Location: ', '').trim()
                 });

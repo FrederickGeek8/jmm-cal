@@ -3,9 +3,16 @@
 import json
 from itertools import chain
 from datetime import datetime
+from pathlib import Path
+import hashlib
+
+CURR_FILE = Path(__file__).parent
 
 # Original JSON from:
 # https://jointmathematicsmeetings.org/meetings/national/jmm2026/jmm2026-agenda.json
+
+def bad_hash(i: str) -> str:
+    return hashlib.md5(i.encode()).hexdigest()[:9]
 
 def collect_day(mtg_day):
     # print(mtg_day["mtg-events"]["mtg-event"])
@@ -14,6 +21,7 @@ def collect_day(mtg_day):
         "starttime": e["mtgevt-starttime"].replace('.', '').lower().zfill(8),
         "endtime": e["mtgevt-endtime"].replace('.', '').lower().zfill(8),
         "day": int(e["mtgevt-day"]["mtgevt-dayno"]),
+        "uid": bad_hash(f'{e["mtgevt-confextitle"]} {e["mtgevt-starttime"]} {e["mtgevt-day"]["mtgevt-dayno"]}'),
     }, mtg_day["mtg-events"]["mtg-event"])
 
 def collect_day_sub(mtg_day):
@@ -29,11 +37,12 @@ def collect_day_sub(mtg_day):
             "starttime": se["mtgsub-starttime"].replace('.', '').lower().zfill(8),
             "endtime": se["mtgsub-endtime"].replace('.', '').lower().zfill(8),
             "presno": se["mtgsub-presno"],
+            "uid": se["mtgsub-presno"],
             "day": int(event["mtgevt-day"]["mtgevt-dayno"])
         }, l))
 
 
-with open("./tmp/jmm2026-agenda.json", 'r') as f:
+with open(CURR_FILE / "../tmp/jmm2026-agenda.json", 'r') as f:
     object = json.load(f)
 
     events = chain(
@@ -43,9 +52,9 @@ with open("./tmp/jmm2026-agenda.json", 'r') as f:
     events = sorted(events, key=lambda value: datetime.strptime("Jan {:02d} 2026 {}".format(value["day"], value["starttime"]), "%b %d %Y %I:%M %p"))
     print(events[0:5])
 
-with open("./resources/jmm2026-parsed-agenda.min.json", "w") as f:
+with open(CURR_FILE / "resources/jmm2026-parsed-agenda.min.json", "w") as f:
     json.dump(events, f)
 
 
-with open("./resources/jmm2026-parsed-agenda.json", "w") as f:
+with open(CURR_FILE / "resources/jmm2026-parsed-agenda.json", "w") as f:
     json.dump(events, f, indent=2)
